@@ -6,9 +6,7 @@
 
 ## Streamlit Cloud :
 
-Streamlit Cloud : ()
-
-![Air Quality Dashboard Preview]()
+Streamlit Cloud : (https://potahere-submission-dicoding-belajar-analisis--dashboard-zlggwy.streamlit.app/)
 
 ## Setup environment
 
