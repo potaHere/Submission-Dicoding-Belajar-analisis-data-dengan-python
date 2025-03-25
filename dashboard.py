@@ -43,16 +43,29 @@ elif menu == "Kualitas Udara Wanliu":
         if filtered_df.empty:
             st.warning("Tidak ada data dalam rentang waktu yang dipilih.")
         else:
-            st.subheader("Statistik Deskriptif Kualitas Udara")
-            st.write(filtered_df.describe())
-
-            # Visualisasi PM2.5 Rata-rata per Tahun
-            yearly_avg = filtered_df.groupby('year')['PM2.5'].mean().reset_index()
-            plt.figure(figsize=(10, 5))
-            sns.barplot(x='year', y='PM2.5', data=yearly_avg, palette='viridis')
-            plt.title('Rata-rata PM2.5 per Tahun di Wanliu')
+            # Visualisasi PM2.5 Rata-rata per Tahun (Line Chart)
+            st.subheader("Rata-rata PM2.5 per Tahun")
+            pm25_yearly = filtered_df.groupby('year')['PM2.5'].mean().reset_index()
+            plt.figure(figsize=(10, 6))
+            sns.lineplot(data=pm25_yearly, x='year', y='PM2.5', marker='o')
+            plt.title('Rata-rata PM2.5 per Tahun di Wanliu (2013-2017)')
             plt.xlabel('Tahun')
             plt.ylabel('Rata-rata PM2.5')
+            plt.grid(True)
+            st.pyplot(plt)
+
+            # Visualisasi Distribusi Kategori PM2.5
+            st.subheader("Distribusi Kategori PM2.5")
+            filtered_df['PM2.5_Category'] = pd.cut(
+                filtered_df['PM2.5'],
+                bins=[0, 35, 75, 115, 150, 250, 500],
+                labels=['Baik', 'Sedang', 'Tidak Sehat', 'Sangat Tidak Sehat', 'Berbahaya', 'Berbahaya Ekstrem']
+            )
+            plt.figure(figsize=(10, 6))
+            sns.countplot(data=filtered_df, x='PM2.5_Category', order=filtered_df['PM2.5_Category'].cat.categories)
+            plt.title('Distribusi Kategori PM2.5')
+            plt.xlabel('Kategori PM2.5')
+            plt.ylabel('Jumlah')
             st.pyplot(plt)
 
 elif menu == "Faktor yang Mempengaruhi Kualitas Udara":
@@ -66,33 +79,34 @@ elif menu == "Faktor yang Mempengaruhi Kualitas Udara":
         st.sidebar.subheader("Pilih Kolom untuk Korelasi")
         selected_columns = st.sidebar.multiselect(
             "Pilih Kolom:",
-            ['PM2.5', 'PM10', 'SO2', 'NO2', 'CO', 'O3'],
-            default=['PM2.5', 'PM10', 'SO2', 'NO2', 'CO', 'O3']
+            ['PM2.5', 'PM10', 'SO2', 'NO2', 'CO', 'O3', 'TEMP', 'PRES', 'DEWP', 'RAIN', 'WSPM'],
+            default=['PM2.5', 'PM10', 'SO2', 'NO2', 'CO', 'O3', 'TEMP', 'PRES', 'DEWP', 'RAIN', 'WSPM']
         )
 
         if len(selected_columns) < 2:
             st.warning("Pilih minimal dua kolom untuk melihat korelasi.")
         else:
-            st.subheader("Korelasi antara Polutan")
+            # Visualisasi Heatmap Korelasi Antar Variabel
+            st.subheader("Heatmap Korelasi Antar Variabel")
             corr_matrix = df[selected_columns].corr()
-            plt.figure(figsize=(10, 8))
+            plt.figure(figsize=(20, 10))
             sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', fmt=".2f")
-            plt.title('Heatmap Korelasi Antara Polutan')
+            plt.title('Heatmap Korelasi Antar Variabel')
             st.pyplot(plt)
 
-        # Slider untuk memilih rentang PM2.5
-        st.sidebar.subheader("Filter PM2.5")
-        min_pm25, max_pm25 = st.sidebar.slider(
-            "Rentang PM2.5:",
-            float(df['PM2.5'].min()),
-            float(df['PM2.5'].max()),
-            (float(df['PM2.5'].min()), float(df['PM2.5'].max()))
+        # Pilih variabel untuk scatter plot
+        st.sidebar.subheader("Pilih Variabel untuk Scatter Plot")
+        scatter_var = st.sidebar.selectbox(
+            "Pilih Variabel:",
+            ['PM10', 'SO2', 'NO2', 'CO', 'O3', 'TEMP', 'PRES', 'DEWP', 'RAIN', 'WSPM']
         )
-        filtered_df = df[(df['PM2.5'] >= min_pm25) & (df['PM2.5'] <= max_pm25)]
 
-        st.subheader("Boxplot PM2.5 berdasarkan Kelompok Intensitas Hujan")
-        filtered_df['RAIN_GROUP'] = pd.cut(filtered_df['RAIN'], bins=[0, 1, 4, 8, 10], labels=['No Rain', 'Light Rain', 'Moderate Rain', 'Heavy Rain'])
+        # Visualisasi Scatter Plot
+        st.subheader(f"Scatter Plot PM2.5 vs {scatter_var}")
         plt.figure(figsize=(10, 6))
-        sns.boxplot(x='RAIN_GROUP', y='PM2.5', data=filtered_df)
-        plt.title('Boxplot PM2.5 berdasarkan Intensitas Hujan')
+        sns.scatterplot(data=df, x=scatter_var, y='PM2.5')
+        plt.title(f'Scatter Plot PM2.5 vs {scatter_var}')
+        plt.xlabel(scatter_var)
+        plt.ylabel('PM2.5')
+        plt.grid(True)
         st.pyplot(plt)
